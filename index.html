@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fake News Detector</title>
+</head>
+<body>
+  <h2>Fake News Detector</h2>
+  <textarea id="news" placeholder="Paste news here"></textarea><br>
+  <button onclick="checkNews()">Check</button>
+  <p id="result"></p>
+
+<script>
+async function checkNews(){
+  let text = document.getElementById("news").value;
+  
+  let res = await fetch("https://YOUR-RENDER-URL/predict", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({news: text})
+  });
+
+  let data = await res.json();
+  document.getElementById("result").innerText = data.result;
+}
+</script>
+</body>
+</html>
