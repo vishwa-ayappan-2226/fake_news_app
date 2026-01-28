@@ -5,85 +5,85 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# 🔥 SUPER ULTRA SHARP FAKE TRIGGERS
 FAKE_PHRASES = [
-    # clickbait / hype
-    "clickbait", "shocking", "unbelievable", "fake", "scam", "alert",
-    "breaking", "exclusive", "secret", "surprising", "amazing", "crazy",
-    "incredible", "you won't believe", "truth", "hoax", "rumor", "leak",
-    "exposed", "must see", "trending", "viral", "scandal", "urgent",
-    "sensational", "warning", "false", "fabricated", "bait", "deceptive",
-    "fraud", "caught", "fake info", "fake report", "not true", "lies",
-    "unverified", "bogus", "dangerous", "fatal", "destroyed", "mystery",
-    "impossible", "mind-blowing", "life-changing", "outrageous", "critical",
-    "catastrophe", "alert news", "fake leak", "exclusive report",
 
-    # authority / sarcastic
-    "doctor confirms", "scientist proves", "expert says", "research shows",
-    "study reveals", "nasa hides", "government secret", "breaking discovery",
-    "scientists agree", "medical breakthrough", "official statement",
-    "authority confirms", "top secret", "official report", "scientific evidence",
-    "doctor says", "expert opinion", "medical claim", "scientists discover",
-    "research proves", "official announcement", "confirmed by experts",
-    "verified by doctors", "doctor recommends", "scientists confirm",
-    "doctor claims", "scientific breakthrough", "study confirms",
+    # 🚨 clickbait & hype
+    "clickbait","shocking","unbelievable","breaking","secret revealed",
+    "must watch","must see","you won't believe","exposed truth",
+    "hidden truth","viral news","urgent alert","big reveal","sensational",
 
-    # sci-fi / absurd / miracles
-    "mars project", "time travel", "aliens exist", "unicorn proven",
-    "scientist discovers immortality", "doctor claims flying car",
-    "nasa hides portal", "secret teleportation", "robot army",
-    "miracle potion", "fountain of youth", "doctor confirms invisibility",
-    "scientist proves telepathy", "hidden civilization", "alien technology",
-    "magic cure", "miracle weight loss", "doctor says cure cancer instantly",
-    "government time machine", "scientist reveals clones",
-    "miracle eyesight cure", "magic hair growth", "alien virus",
-    "nasa secret mission", "top secret alien files", "scientist proves immortality",
-    "doctor confirms perpetual motion", "hidden dimension", "miracle anti-aging",
-    "magical elixir", "psychic powers",
+    # 💊 medical & miracle scams
+    "miracle cure","cure cancer instantly","doctor confirms cure",
+    "one drink cures","no medicine needed","heal overnight",
+    "weight loss in days","grow hair fast","reverse diabetes",
+    "never fall sick","medical breakthrough miracle",
+    "scientists found cure for all diseases",
 
-    # social media / hype
-    "facebook post viral", "tweet goes viral", "instagram trend",
-    "tiktok sensation", "viral challenge", "internet sensation",
-    "youtube video viral", "reddit hype", "social media hoax",
-    "online scam", "viral meme", "trending tweet", "fake influencer",
-    "celebrity fake news", "fake quote", "false rumor", "online conspiracy",
-    "manipulated video", "photoshopped image", "deepfake", "digital hoax",
-    "internet lies", "social media lie", "fake online report", "viral misinformation",
-    "click for truth", "share if true", "must share", "fake challenge", "fake giveaway",
+    # 🏛 government & money rumors
+    "government giving free money","free cash scheme","bank doubles money",
+    "atm will stop working","new secret tax rule","hidden gold reserve",
+    "government hiding truth","big government secret","new rule tomorrow",
+
+    # 👽 sci-fi & impossible
+    "aliens found","alien invasion","mars colony next year",
+    "time travel discovered","humans immortal","teleportation invented",
+    "secret portal found","living underwater","flying cars released",
+
+    # 📱 internet scams
+    "share to win money","click to earn","free recharge forever",
+    "whatsapp trick","new app gives free money","instant profit scheme",
+    "investment doubles in week","crypto guaranteed profit",
+
+    # 🎭 fake authority claims
+    "scientists confirm","doctors shocked","experts reveal",
+    "study proves overnight","official leak","top secret report",
+    "research confirms miracle","medical experts stunned",
+
+    # 🤯 extreme exaggeration
+    "world will end soon","dead rise again","sun will stop shining",
+    "earth will split","humans can fly now","gravity turned off",
+
+    # 📢 misinformation words
+    "hoax","fake report","false claim","fabricated story",
+    "unverified source","misleading news","rumor spreading",
+    "conspiracy theory","manipulated video","deepfake footage"
 ]
 
-# 🔥 Function to calculate "sharpness score" based on phrase hits
-def predict_fake_news(text):
-    text_lower = text.lower()
-    count = 0
-    for phrase in FAKE_PHRASES:
-        if phrase in text_lower:
-            count += 1
 
-    # Scoring thresholds
-    if count == 0:
-        return "Real"
-    elif 1 <= count <= 3:
-        return "Likely Fake"
-    elif 4 <= count <= 7:
-        return "Very Likely Fake"
+def analyze_news(text):
+    text = text.lower()
+    hits = sum(1 for phrase in FAKE_PHRASES if phrase in text)
+
+    if hits == 0:
+        return "Real", 90
+    elif hits == 1:
+        return "Fake", 75
+    elif hits == 2:
+        return "Fake", 85
+    elif hits == 3:
+        return "Fake", 92
     else:
-        return "Extreme Fake Alert"
+        return "Fake", 97
 
-@app.route("/", methods=["GET"])
+
+@app.route("/")
 def home():
-    return "Fake News Detection API is running!"
+    return "Fake News Detection API Running"
 
 @app.route("/predict", methods=["POST"])
 def predict():
     data = request.json
-    text = data.get("news", "")
+    news = data.get("news","")
 
-    if text.strip() == "":
-        return jsonify({"result": "Please enter some news text"}), 400
+    if not news.strip():
+        return jsonify({"result":"Empty"}),400
 
-    result = predict_fake_news(text)
-    return jsonify({"result": result})
+    result, confidence = analyze_news(news)
+
+    return jsonify({
+        "result": result,
+        "confidence": confidence
+    })
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
