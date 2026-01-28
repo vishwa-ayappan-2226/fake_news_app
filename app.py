@@ -1,120 +1,111 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import os
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fake News Detector</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding-top: 50px;
+            margin: 0;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 80%;
+            max-width: 500px;
+            height: 120px;
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            resize: vertical;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 22px;
+            font-weight: bold;
+        }
+        .sample-buttons {
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Fake News Detector</h1>
+    <textarea id="newsText" placeholder="Paste news here..."></textarea><br>
+    <button onclick="checkNews()">Check</button>
 
-app = Flask(__name__)
-CORS(app)
+    <div class="sample-buttons">
+        <button onclick="checkSample('Breaking: Shocking clickbait story!')">Test Fake</button>
+        <button onclick="checkSample('Local community garden opens today')">Test Real</button>
+    </div>
 
-# -------------------------------
-# FAKE NEWS PHRASE DATABASE
-# -------------------------------
+    <div id="result"></div>
 
-strong_fake = [
-    "clickbait", "shocking", "unbelievable", "you won't believe",
-    "fake news", "scam", "hoax", "breaking shocking",
-    "must watch", "this will change your life",
-    "secret revealed", "exposed truth"
-]
+    <script>
+        async function checkNews() {
+            const news = document.getElementById('newsText').value.trim();
+            const resultDiv = document.getElementById('result');
 
-money_fake = [
-    "get rich quick", "overnight millionaire", "easy passive income",
-    "secret investment strategy", "guaranteed returns",
-    "risk free trading", "turn 100 into 10000",
-    "crypto pump", "next bitcoin",
-    "double money in one day",
-    "instant profit system"
-]
+            if(news === "") {
+                resultDiv.innerText = "Please enter some news text!";
+                resultDiv.style.color = "black";
+                return;
+            }
 
-health_fake = [
-    "cure all diseases", "100 percent cure",
-    "miracle remedy", "heal naturally in days",
-    "reverse aging", "never get sick again",
-    "magic pill", "one herb cures everything",
-    "heal cancer without treatment"
-]
+            try {
+                const response = await fetch("https://fake-news-app-78v7.onrender.com/predict", { 
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ news: news })
+                });
 
-conspiracy_fake = [
-    "secret government plan", "media hiding the truth",
-    "aliens among us", "world ending soon",
-    "hidden agenda exposed",
-    "mind control technology",
-    "fake moon landing proof"
-]
+                console.log("Response received:", response);
+                const data = await response.json();
+                console.log("Data:", data);
 
-giveaway_fake = [
-    "congratulations you are selected",
-    "claim reward now",
-    "free phone offer",
-    "you have been chosen",
-    "gift waiting for you",
-    "exclusive winner"
-]
+                if(data.result === "Fake") {
+                    resultDiv.innerText = "Result: Fake";
+                    resultDiv.style.color = "red";
+                } else if(data.result === "Real") {
+                    resultDiv.innerText = "Result: Real";
+                    resultDiv.style.color = "green";
+                } else {
+                    resultDiv.innerText = "Unexpected response from API";
+                    resultDiv.style.color = "orange";
+                }
+            } catch (err) {
+                resultDiv.innerText = "Error connecting to API!";
+                resultDiv.style.color = "orange";
+                console.error(err);
+            }
+        }
 
-celebrity_fake = [
-    "celebrity death confirmed secretly",
-    "shocking celebrity scandal",
-    "celebrity arrested overnight",
-    "secret affair leaked",
-    "celebrity hospitalised suddenly"
-]
-
-# Combine all fake phrases
-all_fake_phrases = (
-    strong_fake +
-    money_fake +
-    health_fake +
-    conspiracy_fake +
-    giveaway_fake +
-    celebrity_fake
-)
-
-# -------------------------------
-# SMART DETECTION LOGIC
-# -------------------------------
-
-def predict_fake_news(text):
-    text = text.lower()
-    score = 0
-
-    for phrase in all_fake_phrases:
-        if phrase in text:
-            score += 1
-
-    # Decision based on score
-    if score >= 4:
-        return "Fake"
-    elif score >= 2:
-        return "Suspicious"
-    else:
-        return "Likely Real"
-
-
-# -------------------------------
-# ROUTES
-# -------------------------------
-
-@app.route("/", methods=["GET"])
-def home():
-    return "Fake News Detection API is running!"
-
-@app.route("/predict", methods=["POST"])
-def predict():
-    data = request.get_json()
-    text = data.get("news", "")
-
-    if text.strip() == "":
-        return jsonify({"result": "Please enter some news text"}), 400
-
-    result = predict_fake_news(text)
-
-    return jsonify({"result": result})
-
-
-# -------------------------------
-# RUN SERVER
-# -------------------------------
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+        function checkSample(text) {
+            document.getElementById('newsText').value = text;
+            checkNews();
+        }
+    </script>
+</body>
+</html>
 
