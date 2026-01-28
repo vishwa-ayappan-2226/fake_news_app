@@ -1,111 +1,44 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Fake News Detector</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f0f0f0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            min-height: 100vh;
-            padding-top: 50px;
-            margin: 0;
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 20px;
-        }
-        textarea {
-            width: 80%;
-            max-width: 500px;
-            height: 120px;
-            padding: 10px;
-            font-size: 16px;
-            margin-bottom: 10px;
-            resize: vertical;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            margin: 5px;
-        }
-        #result {
-            margin-top: 20px;
-            font-size: 22px;
-            font-weight: bold;
-        }
-        .sample-buttons {
-            margin-top: 15px;
-        }
-    </style>
-</head>
-<body>
-    <h1>Fake News Detector</h1>
-    <textarea id="newsText" placeholder="Paste news here..."></textarea><br>
-    <button onclick="checkNews()">Check</button>
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import os
 
-    <div class="sample-buttons">
-        <button onclick="checkSample('Breaking: Shocking clickbait story!')">Test Fake</button>
-        <button onclick="checkSample('Local community garden opens today')">Test Real</button>
-    </div>
+app = Flask(__name__)
+CORS(app)  # allow frontend to call API
 
-    <div id="result"></div>
+# Simple fake news logic with lots of trigger words
+FAKE_WORDS = [
+    "clickbait","shocking","unbelievable","fake","scam","breaking",
+    "amazing","miracle","secret","hidden","government","alert",
+    "urgent","viral","shocker","hoax","cure","instant","double","win",
+    "money","rich","hidden","exposed","conspiracy","truth","lies",
+    "banned","illegal","exclusive","breaking news","secret formula"
+]
 
-    <script>
-        async function checkNews() {
-            const news = document.getElementById('newsText').value.trim();
-            const resultDiv = document.getElementById('result');
+def predict_fake_news(text):
+    # Return 0 for Fake, 1 for Real
+    text_lower = text.lower()
+    return 0 if any(word in text_lower for word in FAKE_WORDS) else 1
 
-            if(news === "") {
-                resultDiv.innerText = "Please enter some news text!";
-                resultDiv.style.color = "black";
-                return;
-            }
+@app.route("/", methods=["GET"])
+def home():
+    return "Fake News Detection API is running!"
 
-            try {
-                const response = await fetch("https://fake-news-app-78v7.onrender.com/predict", { 
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ news: news })
-                });
+@app.route("/predict", methods=["POST"])
+def predict():
+    data = request.json
+    text = data.get("news", "")
 
-                console.log("Response received:", response);
-                const data = await response.json();
-                console.log("Data:", data);
+    if not text.strip():
+        return jsonify({"result": "Please enter some news text"}), 400
 
-                if(data.result === "Fake") {
-                    resultDiv.innerText = "Result: Fake";
-                    resultDiv.style.color = "red";
-                } else if(data.result === "Real") {
-                    resultDiv.innerText = "Result: Real";
-                    resultDiv.style.color = "green";
-                } else {
-                    resultDiv.innerText = "Unexpected response from API";
-                    resultDiv.style.color = "orange";
-                }
-            } catch (err) {
-                resultDiv.innerText = "Error connecting to API!";
-                resultDiv.style.color = "orange";
-                console.error(err);
-            }
-        }
+    try:
+        pred = predict_fake_news(text)
+        result = "Fake" if pred == 0 else "Real"
+        return jsonify({"result": result})
+    except Exception as e:
+        return jsonify({"result": "Error processing request", "error": str(e)}), 500
 
-        function checkSample(text) {
-            document.getElementById('newsText').value = text;
-            checkNews();
-        }
-    </script>
-</body>
-</html>
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
 
